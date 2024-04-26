@@ -4,12 +4,14 @@ Spoter is python program that spots objects with neural network (edgeYOLO) and l
 Funcionality:
 
 -Supports any USB camera or OBS virtual camera running on the same computer this script is running.
+
 -Lets you easily use web frontend to config many things
 
 Example use-cases:
 
--You want to switch ON/OFF tplink switch that is connected to your cat/dog feeder when the camera sees the dog/cat it will send you a message (currently only Signal network supported) and it will turn ON/OFF the switch connected to your feeder 
--When person is 
+-You want to switch ON/OFF tplink switch that is connected to your cat/dog feeder when the camera sees the dog/cat it will send you a message (currently only Signal network supported) and it will turn ON/OFF the switch connected to your feeder thus feeds your fluffy companion
+
+-When person is detected it will send you photo/video on signal with timestampt 
 
 Device support list:
 
