@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 import configparser
+from flask import Flask, Response
+
+# Initialize Flask app
+app = Flask(__name__)
 
 # Load the configuration file
 config = configparser.ConfigParser()
@@ -28,30 +32,57 @@ def send_signal_message():
 # Access the video camera based on the configured index
 cap = cv2.VideoCapture(video_device_index)
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+# Define a function to perform object detection
+def detect_objects():
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-    # Perform object detection
-    blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
-    net.setInput(blob)
-    outs = net.forward(output_layers)
+        # Perform object detection
+        blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+        net.setInput(blob)
+        outs = net.forward(output_layers)
 
-    # Process the detections
-    for out in outs:
-        for detection in out:
-            scores = detection[5:]
-            class_id = np.argmax(scores)
-            confidence = scores[class_id]
-            if confidence > 0.5 and classes[class_id] == 'person':
-                # Person detected, trigger actions
-                turn_off_switch()  # Turn off the TP-Link smart switch
-                send_signal_message()  # Send a notification via Signal
+        # Process the detections
+        for out in outs:
+            for detection in out:
+                scores = detection[5:]
+                class_id = np.argmax(scores)
+                confidence = scores[class_id]
+                if confidence > 0.5 and classes[class_id] == 'person':
+                    # Person detected, trigger actions
+                    turn_off_switch()  # Turn off the TP-Link smart switch
+                    send_signal_message()  # Send a notification via Signal
 
-    cv2.imshow('Camera Feed', frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        cv2.imshow('Camera Feed', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-cap.release()
-cv2.destroyAllWindows()
+# Define a route for the Flask web server
+@app.route('/')
+def index():
+    return "Welcome to Object Detection with Flask!"
+
+# Define a function to generate video frames for the Flask app
+def generate_frames():
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+# Define a route for streaming video on the Flask web server
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# Run the object detection loop and start the Flask web server
+if __name__ == '__main__':
+    from threading import Thread
+    detection_thread = Thread(target=detect_objects)
+    detection_thread.start()
+    app.run(host='0.0.0.0', port=5000)
