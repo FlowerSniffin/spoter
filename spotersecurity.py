@@ -1,5 +1,11 @@
 import cv2
 import numpy as np
+import configparser
+
+# Load the configuration file
+config = configparser.ConfigParser()
+config.read('config.cfg')
+video_device_index = int(config['video']['cap'])
 
 # Load the pre-trained YOLO model
 net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
@@ -13,14 +19,14 @@ output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 def turn_off_switch():
     # Implement code to turn off the TP-Link smart switch
     print("Turning off the TP-Link smart switch...")
-                                        
+
 # Placeholder function to send a notification via Signal messenger
 def send_signal_message():
     # Implement code to send a message via Signal messenger
     print("Sending notification via Signal...")
 
-# Access the USB camera
-cap = cv2.VideoCapture(2)  # You may need to adjust the index based on your system
+# Access the video camera based on the configured index
+cap = cv2.VideoCapture(video_device_index)
 
 while True:
     ret, frame = cap.read()
