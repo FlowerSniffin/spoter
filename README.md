@@ -1,5 +1,5 @@
 # Spoter
-Spoter is python program that spots objects with neural network (edgeYOLO) and lets you automate stuff under preset conditions.
+Spoter is python program that spots objects with neural network (edgeYOLO) and lets you automate stuff under preset conditions.Currently we are trying to integrate as many IOT switches from tplink we will be adding more manufactures
 
 Funcionality:
 
@@ -8,7 +8,7 @@ Funcionality:
 
 Example use-cases:
 
--You want to switch ON/OFF tplink switch that is connected to your cat/dog feeder when the camera sees the dog/cat it will send you a message (currently only Signal network supported) and it will turn ON/OFF the switch
+-You want to switch ON/OFF tplink switch that is connected to your cat/dog feeder when the camera sees the dog/cat it will send you a message (currently only Signal network supported) and it will turn ON/OFF the switch connected to your feeder 
 -When person is 
 
 Device support list:
