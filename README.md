@@ -18,3 +18,7 @@ Device support list:
 Messaging notification network support list:
 
 -At the time only signal network is utilized to send messages about detections and actions taken
+
+
+
+Do not forget to download:https://github.com/patrick013/Object-Detection---Yolov3/blob/master/model/yolov3.weights or else it wont run
