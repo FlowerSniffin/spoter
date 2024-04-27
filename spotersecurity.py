@@ -1,7 +1,16 @@
 import cv2
 import numpy as np
 import configparser
-from flask import Flask, Response
+from flask import Flask, Response, render_template
+from requests import Session
+import asyncio
+
+# Initialize PyP100 details
+#import asyncio
+import os
+
+
+
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -26,8 +35,15 @@ cap = cv2.VideoCapture(video_device_index)
 def turn_off_switch():
     # Implement code to turn off the TP-Link smart switch
     print("Turning off the TP-Link smart switch...")
+    #p100.turnOff()
 
-# Placeholder function to send a notification via Signal messenger
+#just testing something
+def send_sms():
+    print("SMS received")
+    
+    
+    
+    # Placeholder function to send a notification via Signal messenger
 def send_signal_message():
     # Implement code to send a message via Signal messenger
     print("Sending notification via Signal...")
@@ -61,11 +77,13 @@ def detect_objects():
                     y = int(center_y - h / 2)
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                     turn_off_switch()
+                    send_sms()
+                    
 
         # Encode the frame as JPEG
         _, jpeg = cv2.imencode('.jpg', frame)
         frame_bytes = jpeg.tobytes()
-
+        
         # Yield the frame in the response for video streaming
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
@@ -78,7 +96,16 @@ def videofeed():
 # Define a route for the Flask web server
 @app.route('/')
 def index():
-    return "Welcome to Spoter!"
+    return render_template('index.html')
+
+@app.route('/testing')
+def testing():
+    return render_template('testing.html')
+
+@app.route('/turn_off_switch', methods=['GET'])
+def trigger_turn_off_switch():
+    turn_off_switch()  # Call the turn_off_switch function
+    return 'Switch turned off'  # Return a response
 
 # Start the Flask web server
 if __name__ == '__main__':
