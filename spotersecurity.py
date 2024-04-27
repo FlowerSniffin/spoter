@@ -19,6 +19,9 @@ with open("coco.names", "r") as f:
 layer_names = net.getLayerNames()
 output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 
+# Access the video camera based on the configured index
+cap = cv2.VideoCapture(video_device_index)
+
 # Placeholder function to turn off the TP-Link smart switch
 def turn_off_switch():
     # Implement code to turn off the TP-Link smart switch
@@ -28,9 +31,6 @@ def turn_off_switch():
 def send_signal_message():
     # Implement code to send a message via Signal messenger
     print("Sending notification via Signal...")
-
-# Access the video camera based on the configured index
-cap = cv2.VideoCapture(video_device_index)
 
 # Define a function to perform object detection
 def detect_objects():
@@ -51,38 +51,35 @@ def detect_objects():
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
                 if confidence > 0.5 and classes[class_id] == 'person':
-                    # Person detected, trigger actions
-                    turn_off_switch()  # Turn off the TP-Link smart switch
-                    send_signal_message()  # Send a notification via Signal
+                    send_signal_message()
+                    # Draw a bounding box around the detected person
+                    center_x = int(detection[0] * frame.shape[1])
+                    center_y = int(detection[1] * frame.shape[0])
+                    w = int(detection[2] * frame.shape[1])
+                    h = int(detection[3] * frame.shape[0])
+                    x = int(center_x - w / 2)
+                    y = int(center_y - h / 2)
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    turn_off_switch()
 
-        cv2.imshow('Camera Feed', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # Encode the frame as JPEG
+        _, jpeg = cv2.imencode('.jpg', frame)
+        frame_bytes = jpeg.tobytes()
+
+        # Yield the frame in the response for video streaming
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+# Route for video feed streaming
+@app.route('/videofeed')
+def videofeed():
+    return Response(detect_objects(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # Define a route for the Flask web server
 @app.route('/')
 def index():
-    return "Welcome to Object Detection with Flask!"
+    return "Welcome to Spoter!"
 
-# Define a function to generate video frames for the Flask app
-def generate_frames():
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-# Define a route for streaming video on the Flask web server
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# Run the object detection loop and start the Flask web server
+# Start the Flask web server
 if __name__ == '__main__':
-    from threading import Thread
-    detection_thread = Thread(target=detect_objects)
-    detection_thread.start()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='127.0.0.1', port=5000)
