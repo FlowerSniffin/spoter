@@ -1,16 +1,67 @@
+#There are two types of connecting to TPlink device based on plugp100 library
+#As you can see there are these two functions "example_connect_by_guessing" which is the one i have been able to utilize
+#Need to find out what is wrong with the other one "example_discovery" 
+#When you run this app flask hosts site reacheable on your localhost under port :5000
+#/127.0.0.1/testing has button which is meant for testing functions, in this version of the program it is specifically set to call "tryauthorize" function for test purp 
+#Finally status of the device is recheable, so far tested only with smartplug p100, but we can clearly see authentification works
+#We are currently testing the plugp100 library to not only get the status of the device but to actually control it 
 import cv2
 import numpy as np
 import configparser
 from flask import Flask, Response, render_template
 from requests import Session
 import asyncio
-
-# Initialize PyP100 details
-#import asyncio
+import logging
 import os
+# Imports plugp100 library
+from plugp100.common.credentials import AuthCredential
+from plugp100.common.credentials import AuthCredential
+from plugp100.discovery.tapo_discovery import TapoDiscovery
+from plugp100.common.credentials import AuthCredential
+from plugp100.new.device_factory import connect, DeviceConnectConfiguration
 
 
 
+async def example_connect_by_guessing(credentials: AuthCredential, host: str):
+    device_configuration = DeviceConnectConfiguration(
+        host=host,
+        credentials=credentials
+    )
+    device = await connect(device_configuration)
+    await device.update()
+    print({
+        'type': type(device),
+        'protocol': device.protocol_version,
+        'raw_state': device.raw_state,
+        'components': device.get_device_components
+    })
+
+
+async def example_discovery(credentials: AuthCredential):
+    discovered = await TapoDiscovery.scan(timeout=5)
+    for discovered_device in discovered:
+        try:
+            device = await discovered_device.get_tapo_device(credentials)
+            await device.update()
+            print({
+                'type': type(device),
+                'protocol': device.protocol_version,
+                'raw_state': device.raw_state
+            })
+            await device.client.close()
+        except Exception as e:
+            logging.error(f"Failed to update {discovered_device.ip} {discovered_device.device_type}", exc_info=e)
+
+async def disc():
+    credentials = AuthCredential("davidnovak.cze@gmail.com", "Nasrat666.")
+    #await example_discovery(credentials)
+    await example_connect_by_guessing(credentials, "192.168.0.60")
+
+def loopfunction():
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(disc())
+    loop.run_until_complete(asyncio.sleep(0.1))
+    loop.close()
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -32,9 +83,10 @@ output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 cap = cv2.VideoCapture(video_device_index)
 
 # Placeholder function to turn off the TP-Link smart switch
-def turn_off_switch():
+def tryauthorize():
     # Implement code to turn off the TP-Link smart switch
-    print("Turning off the TP-Link smart switch...")
+    print("Trying to connect to ipadress set in function disc(dis as discover)")
+    loopfunction()
     #p100.turnOff()
 
 #just testing something
@@ -104,7 +156,7 @@ def testing():
 
 @app.route('/turn_off_switch', methods=['GET'])
 def trigger_turn_off_switch():
-    turn_off_switch()  # Call the turn_off_switch function
+    tryauthorize()  # Call the turn_off_switch function
     return 'Switch turned off'  # Return a response
 
 # Start the Flask web server
